@@ -1,33 +1,45 @@
 {
-  "name": "codedrop-desktop",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "codedrop",
+  "version": "1.0.0",
+  "description": "Clipboard synchronization tool for multiple devices",
+  "main": "electron.js",
   "scripts": {
     "dev": "vite",
+    "edev": "concurrently \"vite\" \"electron src/electron.js\"",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "package": "electron-builder --dir",
+    "dist": "electron-builder"
   },
   "dependencies": {
-    "autoprefixer": "^10.4.20",
-    "concurrently": "^9.1.2",
-    "electron": "^34.3.0",
-    "electron-builder": "^25.1.8",
-    "postcss": "^8.5.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.9"
+    "axios": "^1.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.11.0",
+    "react-router-dom": "^6.15.0",
+    "socket.io-client": "^4.7.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.21.0",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.21.0",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "globals": "^15.15.0",
-    "vite": "^6.2.0"
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.4",
+    "autoprefixer": "^10.4.15",
+    "concurrently": "^8.2.1",
+    "electron": "^26.1.0",
+    "electron-builder": "^24.6.4",
+    "postcss": "^8.4.28",
+    "tailwindcss": "^3.3.3",
+    "vite": "^4.4.9"
+  },
+  "build": {
+    "appId": "com.codedrop.app",
+    "productName": "CodeDrop",
+    "files": [
+      "build/**/*",
+      "electron.js",
+      "src/preload.js"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
   }
 }
