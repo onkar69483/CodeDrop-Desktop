@@ -9,10 +9,17 @@ With CodeDrop, you can:
 - Toggle clipboard sync like a **desktop extension**.
 
 <p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Electron_Software_Framework_Logo.svg" alt="Electron Logo" width="50">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Built%20with-Electron-blue" alt="Built with Electron">
+</p>
+
+<p align="center">
   <img src="https://github.com/user-attachments/assets/ebee9287-a2ee-4b52-a761-d86c23eab4e6" alt="Image 1" width="30%" height="400">
   <img src="https://github.com/user-attachments/assets/7f6074f0-5ad9-4ed8-8248-44a9a0991f23" alt="Image 2" width="25%" height="400">
 </p>
-
 
 ## ✨ Features
 
@@ -26,8 +33,8 @@ With CodeDrop, you can:
 
 ### **1️⃣ Clone the Repository**
 ```bash
-git clone https://github.com/yourusername/codedrop.git
-cd codedrop
+git clone https://github.com/onkar69483/codedrop-desktop.git
+cd codedrop-desktop
 ```
 
 ### **2️⃣ Install Dependencies**
@@ -64,7 +71,7 @@ npm run edev
 - **Frontend:** Electron, React, TailwindCSS  
 - **Backend:** Node.js, Express.js  
 - **Database:** MongoDB  
-- **Real-Time Sync:** WebSockets
+- **Real-Time Sync:** WebSockets  
 
 ## 🛡️ Security Considerations
 🔐 CodeDrop ensures that clipboard data is **never stored permanently** in the database.  
@@ -80,3 +87,4 @@ npm run edev
 This project is licensed under the **MIT License**.
 
 🚀 **Let's make clipboard sharing effortless! Happy coding!** 🎉
+
