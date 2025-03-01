@@ -1,0 +1,45 @@
+{
+  "name": "codedrop",
+  "version": "1.0.0",
+  "description": "Clipboard synchronization tool for multiple devices",
+  "main": "electron.js",
+  "scripts": {
+    "dev": "vite",
+    "edev": "concurrently \"vite\" \"electron src/electron.js\"",
+    "build": "vite build",
+    "package": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.11.0",
+    "react-router-dom": "^6.15.0",
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.4",
+    "autoprefixer": "^10.4.15",
+    "concurrently": "^8.2.1",
+    "electron": "^26.1.0",
+    "electron-builder": "^24.6.4",
+    "postcss": "^8.4.28",
+    "tailwindcss": "^3.3.3",
+    "vite": "^4.4.9"
+  },
+  "build": {
+    "appId": "com.codedrop.app",
+    "productName": "CodeDrop",
+    "files": [
+      "build/**/*",
+      "electron.js",
+      "src/preload.js"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
+  }
+}

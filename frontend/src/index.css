@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  @apply bg-secondary-light text-gray-800 font-sans select-none;
+  -webkit-app-region: drag;
+}
+
+input, button, select, a {
+  -webkit-app-region: no-drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-secondary;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* Custom button styles */
+.btn {
+  @apply py-2 px-4 rounded font-medium text-sm no-drag transition-colors;
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary-dark;
+}
+
+.btn-secondary {
+  @apply bg-secondary hover:bg-secondary-dark text-gray-700;
+}
+
+.btn-outline {
+  @apply border border-primary text-primary hover:bg-primary hover:text-white;
+}
+
+/* Custom input styles */
+.input {
+  @apply py-2 px-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary;
+}
+
+/* Titlebar */
+.titlebar {
+  @apply flex justify-between items-center p-2 bg-secondary-dark;
+}
+
+.main-container {
+  overflow-y: auto;
+  height: 100%;
+}
