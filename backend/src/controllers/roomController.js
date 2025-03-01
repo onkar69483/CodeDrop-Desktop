@@ -1,7 +1,7 @@
 const Room = require('../models/Room');
 const Device = require('../models/Device');
 const generateCode = require('../utils/generateCode');
-const { io } = require('../server');
+const socketManager = require('../utils/socketManager');
 
 // Create a new room
 exports.createRoom = async (req, res) => {
@@ -168,6 +168,7 @@ exports.approveJoinRequest = async (req, res) => {
       await device.save();
 
       // Notify the device that it's been approved
+      const io = socketManager.getIO();
       io.to(roomCode).emit('joinRequestProcessed', {
         approved: true,
         deviceId
@@ -176,6 +177,7 @@ exports.approveJoinRequest = async (req, res) => {
       return res.status(200).json({ message: 'Device approved to join room' });
     } else {
       // Notify the device that it's been rejected
+      const io = socketManager.getIO();
       io.to(roomCode).emit('joinRequestProcessed', {
         approved: false,
         deviceId
@@ -220,6 +222,7 @@ exports.leaveRoom = async (req, res) => {
       room.isActive = false;
       
       // Notify all devices in the room
+      const io = socketManager.getIO();
       io.to(roomCode).emit('roomClosed', { 
         message: 'Room has been closed by the root device' 
       });
@@ -264,6 +267,7 @@ exports.changeSyncMode = async (req, res) => {
     await room.save();
 
     // Notify all devices in the room
+    const io = socketManager.getIO();
     io.to(roomCode).emit('syncModeChanged', { 
       syncMode 
     });

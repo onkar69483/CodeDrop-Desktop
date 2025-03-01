@@ -26,11 +26,11 @@ function createWindow() {
 
   mainWindow.loadURL(startURL);
 
-  mainWindow.on('blur', () => {
-    if (!mainWindow.webContents.isDevToolsOpened()) {
-      mainWindow.hide(); 
-    }
-  });
+  // mainWindow.on('blur', () => {
+  //   if (!mainWindow.webContents.isDevToolsOpened()) {
+  //     mainWindow.hide(); 
+  //   }
+  // });
 
   createTray();
   setupIpcHandlers();
@@ -64,11 +64,14 @@ function setupIpcHandlers() {
     return clipboard.readText();
   });
 
-  ipcMain.handle('set-clipboard-text', (_, text) => {
-    clipboard.writeText(text);
-    return true;
+  ipcMain.on('set-clipboard-text', (event, text) => {
+    if (typeof text === 'string' && text.trim() !== '') {
+      clipboard.writeText(text);
+    } else {
+      console.error('Invalid text received for clipboard:', text);
+    }
   });
-
+  
   ipcMain.on('show-window', () => {
     mainWindow.show();
   });

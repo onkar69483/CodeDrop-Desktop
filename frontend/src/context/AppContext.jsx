@@ -58,11 +58,17 @@ export const AppProvider = ({ children }) => {
     });
 
     socket.on('clipboardUpdate', (data) => {
-      if (isSyncEnabled && data.data && data.fromDeviceId !== deviceId) {
-        setLastSyncedContent(data.data.content);
-        window.electron.clipboardApi.setClipboardText(data.data.content);
-      }
+        if (isSyncEnabled && data && data.fromDeviceId !== deviceId) {
+            if (typeof data.data === 'string' && data.data.trim() !== '') {
+                setLastSyncedContent(data.data);
+                window.electron.clipboardApi.setClipboardText(data.data); // Fix: Use data.data directly
+            } else {
+                console.warn('Received invalid clipboard content:', data.data);
+            }
+        }
     });
+  
+    
 
     socket.on('joinRequestReceived', (data) => {
       if (isRoot) {
