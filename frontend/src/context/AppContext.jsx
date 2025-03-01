@@ -16,7 +16,9 @@ export const AppProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [error, setError] = useState('');
   const [lastSyncedContent, setLastSyncedContent] = useState('');
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
+  // Initialize device ID, name, and socket connection
   useEffect(() => {
     // Initialize device ID and name
     const storedDeviceId = localStorage.getItem('deviceId') || `device_${Math.random().toString(36).substring(2, 10)}`;
@@ -28,13 +30,6 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('deviceId', storedDeviceId);
     localStorage.setItem('deviceName', storedDeviceName);
 
-    // Check if we were in a room before
-    const storedRoomCode = localStorage.getItem('roomCode');
-    if (storedRoomCode) {
-      setRoomCode(storedRoomCode);
-      checkAndRejoinRoom(storedRoomCode, storedDeviceId);
-    }
-
     // Initialize socket
     const newSocket = io('http://localhost:5000');
     setSocket(newSocket);
@@ -44,12 +39,39 @@ export const AppProvider = ({ children }) => {
     };
   }, []);
 
+  // Handle room reconnection after initialization
+  useEffect(() => {
+    // Only try to rejoin if we have a socket and deviceId
+    if (socket && deviceId) {
+      // Check if we were in a room before
+      const storedRoomCode = localStorage.getItem('roomCode');
+      const storedIsRoot = localStorage.getItem('isRoot') === 'true';
+      const storedSyncMode = localStorage.getItem('syncMode');
+      const storedIsSyncEnabled = localStorage.getItem('isSyncEnabled') === 'true';
+      
+      if (storedRoomCode) {
+        setRoomCode(storedRoomCode);
+        setIsRoot(storedIsRoot);
+        if (storedSyncMode) setSyncMode(storedSyncMode);
+        if (storedIsSyncEnabled !== null) setIsSyncEnabled(storedIsSyncEnabled);
+        
+        // Attempt to rejoin the room
+        checkAndRejoinRoom(storedRoomCode, deviceId, storedIsRoot);
+      }
+    }
+  }, [socket, deviceId]);
+
+  // Socket event listeners
   useEffect(() => {
     if (!socket) return;
 
-    // Socket event listeners
     socket.on('connect', () => {
       console.log('Connected to server');
+      
+      // If we're reconnecting and have a room code, attempt to rejoin
+      if (roomCode && !isConnected && !isReconnecting) {
+        checkAndRejoinRoom(roomCode, deviceId, isRoot);
+      }
     });
 
     socket.on('disconnect', () => {
@@ -58,17 +80,15 @@ export const AppProvider = ({ children }) => {
     });
 
     socket.on('clipboardUpdate', (data) => {
-        if (isSyncEnabled && data && data.fromDeviceId !== deviceId) {
-            if (typeof data.data === 'string' && data.data.trim() !== '') {
-                setLastSyncedContent(data.data);
-                window.electron.clipboardApi.setClipboardText(data.data); // Fix: Use data.data directly
-            } else {
-                console.warn('Received invalid clipboard content:', data.data);
-            }
+      if (isSyncEnabled && data && data.fromDeviceId !== deviceId) {
+        if (typeof data.data === 'string' && data.data.trim() !== '') {
+          setLastSyncedContent(data.data);
+          window.electron.clipboardApi.setClipboardText(data.data);
+        } else {
+          console.warn('Received invalid clipboard content:', data.data);
         }
+      }
     });
-  
-    
 
     socket.on('joinRequestReceived', (data) => {
       if (isRoot) {
@@ -79,18 +99,24 @@ export const AppProvider = ({ children }) => {
     socket.on('joinRequestProcessed', (data) => {
       if (data.approved) {
         setIsConnected(true);
+        localStorage.setItem('isConnected', 'true');
       } else {
         setError('Join request was rejected');
+        // Clear room data if join was rejected
+        localStorage.removeItem('roomCode');
+        setRoomCode('');
       }
     });
 
     socket.on('roomClosed', () => {
+      // Clean up when room is closed
       leaveRoom();
       setError('Room was closed by the root device');
     });
 
     socket.on('syncModeChanged', (data) => {
       setSyncMode(data.syncMode);
+      localStorage.setItem('syncMode', data.syncMode);
     });
 
     return () => {
@@ -102,7 +128,7 @@ export const AppProvider = ({ children }) => {
       socket.off('roomClosed');
       socket.off('syncModeChanged');
     };
-  }, [socket, deviceId, isRoot, isSyncEnabled]);
+  }, [socket, deviceId, isRoot, isSyncEnabled, roomCode, isConnected, isReconnecting]);
 
   // Set up clipboard monitoring when sync is enabled
   useEffect(() => {
@@ -112,6 +138,11 @@ export const AppProvider = ({ children }) => {
           syncClipboard(content);
         }
       });
+      
+      // Save sync state to localStorage
+      localStorage.setItem('isSyncEnabled', 'true');
+    } else {
+      localStorage.setItem('isSyncEnabled', 'false');
     }
 
     return () => {
@@ -119,27 +150,59 @@ export const AppProvider = ({ children }) => {
     };
   }, [isSyncEnabled, isConnected, roomCode, lastSyncedContent]);
 
-  const checkAndRejoinRoom = async (code, devId) => {
+  // Function to check and rejoin a room after page refresh
+  const checkAndRejoinRoom = async (code, devId, wasRoot) => {
+    if (!code || !devId || isReconnecting) return;
+    
+    setIsReconnecting(true);
+    
     try {
+      console.log(`Attempting to rejoin room ${code}`);
+      
       const response = await api.get(`/rooms/${code}`);
       const roomData = response.data.room;
       
-      if (roomData.rootDeviceId === devId) {
+      if (roomData.rootDeviceId === devId || wasRoot) {
+        // This device was the root
         setIsRoot(true);
         setIsConnected(true);
         setSyncMode(roomData.syncMode);
         
-        if (socket) {
+        localStorage.setItem('isRoot', 'true');
+        localStorage.setItem('syncMode', roomData.syncMode);
+        
+        if (socket && socket.connected) {
           socket.emit('joinRoom', code);
         }
       } else {
         // Non-root device needs to rejoin
-        joinRoom(code);
+        console.log('Rejoining as non-root device');
+        setIsRoot(false);
+        localStorage.setItem('isRoot', 'false');
+        
+        if (socket && socket.connected) {
+          socket.emit('joinRoom', code);
+          socket.emit('joinRequest', {
+            roomCode: code,
+            deviceName,
+            deviceId: devId
+          });
+        }
       }
     } catch (err) {
-      localStorage.removeItem('roomCode');
-      setRoomCode('');
       console.error('Failed to rejoin room:', err);
+      // Clear storage if room no longer exists
+      localStorage.removeItem('roomCode');
+      localStorage.removeItem('isRoot');
+      localStorage.removeItem('syncMode');
+      localStorage.removeItem('isSyncEnabled');
+      
+      setRoomCode('');
+      setIsConnected(false);
+      setIsRoot(false);
+      setIsSyncEnabled(false);
+    } finally {
+      setIsReconnecting(false);
     }
   };
 
@@ -160,8 +223,11 @@ export const AppProvider = ({ children }) => {
       setIsConnected(true);
       setDeviceName(newDeviceName);
       
+      // Store room information in localStorage
       localStorage.setItem('roomCode', newRoomCode);
       localStorage.setItem('deviceName', newDeviceName);
+      localStorage.setItem('isRoot', 'true');
+      localStorage.setItem('syncMode', syncMode);
       
       if (socket) {
         socket.emit('joinRoom', newRoomCode);
@@ -190,8 +256,10 @@ export const AppProvider = ({ children }) => {
         setRoomCode(code);
         setDeviceName(newDeviceName);
         
+        // Store room information in localStorage
         localStorage.setItem('roomCode', code);
         localStorage.setItem('deviceName', newDeviceName);
+        localStorage.setItem('isRoot', 'false');
         
         if (socket) {
           socket.emit('joinRoom', code);
@@ -209,8 +277,11 @@ export const AppProvider = ({ children }) => {
         setSyncMode(response.data.room.syncMode);
         setDeviceName(newDeviceName);
         
+        // Store room information in localStorage
         localStorage.setItem('roomCode', code);
         localStorage.setItem('deviceName', newDeviceName);
+        localStorage.setItem('isRoot', 'true');
+        localStorage.setItem('syncMode', response.data.room.syncMode);
         
         if (socket) {
           socket.emit('joinRoom', code);
@@ -237,12 +308,18 @@ export const AppProvider = ({ children }) => {
         }
       }
       
+      // Reset state
       setRoomCode('');
       setIsConnected(false);
       setIsRoot(false);
       setIsSyncEnabled(false);
       setSyncMode('two-way');
+      
+      // Clear localStorage
       localStorage.removeItem('roomCode');
+      localStorage.removeItem('isRoot');
+      localStorage.removeItem('syncMode');
+      localStorage.removeItem('isSyncEnabled');
       
       return true;
     } catch (err) {
@@ -295,6 +372,8 @@ export const AppProvider = ({ children }) => {
       });
       
       setSyncMode(newMode);
+      localStorage.setItem('syncMode', newMode);
+      
       return true;
     } catch (err) {
       console.error('Error changing sync mode:', err);
@@ -330,6 +409,20 @@ export const AppProvider = ({ children }) => {
     setDeviceName(name);
     localStorage.setItem('deviceName', name);
   };
+
+  // Handle beforeunload event
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // We're intentionally not clearing localStorage here
+      // to allow for reconnection on page refresh
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   const value = {
     roomCode,

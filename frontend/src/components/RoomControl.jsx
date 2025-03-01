@@ -22,6 +22,8 @@ const RoomControl = () => {
     
     try {
       await changeSyncMode(newMode);
+      // Save sync mode to localStorage
+      localStorage.setItem('syncMode', newMode);
     } catch (error) {
       console.error('Error changing sync mode:', error);
     } finally {
@@ -34,6 +36,10 @@ const RoomControl = () => {
     
     try {
       await leaveRoom();
+      // Clear room-related data from localStorage on leaving
+      localStorage.removeItem('roomCode');
+      localStorage.removeItem('isRoot');
+      localStorage.removeItem('syncMode');
     } catch (error) {
       console.error('Error leaving room:', error);
     } finally {
