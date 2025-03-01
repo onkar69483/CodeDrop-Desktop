@@ -64,13 +64,15 @@ function setupIpcHandlers() {
     return clipboard.readText();
   });
 
-  ipcMain.on('set-clipboard-text', (event, text) => {
+  ipcMain.handle('set-clipboard-text', (event, text) => {
     if (typeof text === 'string' && text.trim() !== '') {
       clipboard.writeText(text);
+      return 'Clipboard updated';
     } else {
       console.error('Invalid text received for clipboard:', text);
+      return 'Invalid clipboard content';
     }
-  });
+  });  
   
   ipcMain.on('show-window', () => {
     mainWindow.show();
