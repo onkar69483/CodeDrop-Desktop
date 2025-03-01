@@ -31,7 +31,7 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('deviceName', storedDeviceName);
 
     // Initialize socket
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://gfx30lfd-5000.inc1.devtunnels.ms');
     setSocket(newSocket);
 
     return () => {

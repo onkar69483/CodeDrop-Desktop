@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = 'http://localhost:5000/api';
+const baseURL = 'https://gfx30lfd-5000.inc1.devtunnels.ms/api';
 
 export const api = axios.create({
   baseURL,
