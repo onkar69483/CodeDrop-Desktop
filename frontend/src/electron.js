@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, clipboard, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, clipboard, nativeImage, Notification } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -26,12 +26,7 @@ function createWindow() {
 
   mainWindow.loadURL(startURL);
 
-  // mainWindow.on('blur', () => {
-  //   if (!mainWindow.webContents.isDevToolsOpened()) {
-  //     mainWindow.hide(); 
-  //   }
-  // });
-
+  // Create tray and IPC handlers
   createTray();
   setupIpcHandlers();
 }
@@ -42,7 +37,7 @@ function createTray() {
   tray = new Tray(icon);
   
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Open CodeDrop', click: () => mainWindow.show() },
+    { label: 'Open CodeDrop', click: () => showAndFocusWindow() },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() }
   ]);
@@ -54,9 +49,24 @@ function createTray() {
     if (mainWindow.isVisible()) {
       mainWindow.hide();
     } else {
-      mainWindow.show();
+      showAndFocusWindow();
     }
   });
+}
+
+function showAndFocusWindow() {
+  // Show window and bring to front
+  mainWindow.show();
+  
+  // Focus the window
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.focus();
+  
+  // Flash the window on Windows to get attention
+  if (process.platform === 'win32') {
+    mainWindow.flashFrame(true);
+    setTimeout(() => mainWindow.flashFrame(false), 3000);
+  }
 }
 
 function setupIpcHandlers() {
@@ -75,11 +85,31 @@ function setupIpcHandlers() {
   });  
   
   ipcMain.on('show-window', () => {
-    mainWindow.show();
+    showAndFocusWindow();
   });
 
   ipcMain.on('hide-window', () => {
     mainWindow.hide();
+  });
+  
+  // New handler for join requests
+  ipcMain.on('new-join-request', () => {
+    showAndFocusWindow();
+    
+    // Show a system notification if supported
+    if (Notification.isSupported && Notification.isSupported()) {
+      const notification = new Notification({
+        title: 'CodeDrop',
+        body: 'New device join request received!',
+        icon: path.join(__dirname, isDev ? '../public/icon.png' : '../build/icon.png')
+      });
+      
+      notification.show();
+      
+      notification.on('click', () => {
+        showAndFocusWindow();
+      });
+    }
   });
 
   // Monitor clipboard changes

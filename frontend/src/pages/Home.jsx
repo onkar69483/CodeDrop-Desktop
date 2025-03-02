@@ -20,12 +20,12 @@ const Home = () => {
       )}
 
       <TrayIcon />
+      <JoinRequests />
       
       {roomCode ? (
         <>
           <ClipboardToggle />
           <ClipboardContent />
-          <JoinRequests />
           <RoomControl />
         </>
       ) : (

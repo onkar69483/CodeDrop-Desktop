@@ -16,5 +16,8 @@ contextBridge.exposeInMainWorld('electron', {
   windowApi: {
     showWindow: () => ipcRenderer.send('show-window'),
     hideWindow: () => ipcRenderer.send('hide-window')
+  },
+  notificationApi: {
+    newJoinRequest: () => ipcRenderer.send('new-join-request')
   }
 });
